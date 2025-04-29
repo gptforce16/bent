@@ -1,0 +1,58 @@
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8">
+  <title>İstinat Duvarı Demir Hesabı</title>
+  <style>
+    body { font-family: sans-serif; padding: 20px; max-width: 600px; margin: auto; }
+    label { display: block; margin-top: 10px; }
+    input { padding: 5px; width: 100%; }
+    button { margin-top: 15px; padding: 10px; width: 100%; background: #4caf50; color: white; border: none; }
+    #sonuc { margin-top: 20px; padding: 10px; background: #f0f0f0; }
+  </style>
+</head>
+<body>
+  <h2>İstinat Duvarı Demir Hesaplayıcı</h2>
+
+  <label for="yukseklik">Duvar Yüksekliği (cm):</label>
+  <input type="number" id="yukseklik" required>
+
+  <label for="uzunluk">Duvar Uzunluğu (cm):</label>
+  <input type="number" id="uzunluk" required>
+
+  <button onclick="hesapla()">Hesapla</button>
+
+  <div id="sonuc"></div>
+
+  <script>
+    function hesapla() {
+      const yukseklik = parseFloat(document.getElementById("yukseklik").value);
+      const uzunluk = parseFloat(document.getElementById("uzunluk").value);
+
+      if (isNaN(yukseklik) || isNaN(uzunluk) || yukseklik <= 0 || uzunluk <= 0) {
+        alert("Lütfen geçerli değerler girin.");
+        return;
+      }
+
+      const aralik = 10; // cm
+      const demirCapi = 12; // mm
+      const birimAgirlik = 0.888; // kg/m for 12 mm
+
+      const adet = Math.floor(uzunluk / aralik);
+      const boy = yukseklik / 100; // metre
+      const toplamMetraj = adet * boy;
+      const toplamAgirlik = toplamMetraj * birimAgirlik;
+
+      document.getElementById("sonuc").innerHTML = `
+        <h3>Sonuçlar:</h3>
+        <p><strong>Demir çapı:</strong> Ø${demirCapi} mm</p>
+        <p><strong>Demir aralığı:</strong> ${aralik} cm</p>
+        <p><strong>Toplam demir adedi:</strong> ${adet} adet</p>
+        <p><strong>Her çubuğun boyu:</strong> ${boy.toFixed(2)} m</p>
+        <p><strong>Toplam demir metrajı:</strong> ${toplamMetraj.toFixed(2)} m</p>
+        <p><strong>Toplam demir ağırlığı:</strong> ${toplamAgirlik.toFixed(2)} kg</p>
+      `;
+    }
+  </script>
+</body>
+</html>
