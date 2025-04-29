@@ -1,21 +1,109 @@
-İstinat Duvarı Donatı Hesabı body { font-family: Arial, sans-serif; padding: 20px; } .input-group { margin-bottom: 10px; } label { display: block; font-weight: bold; } input { padding: 5px; width: 100px; } svg { border: 1px solid #aaa; margin-top: 20px; } İstinat Duvarı Donatı Hesaplama 
+<!DOCTYPE html>
+<html lang="tr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>İstinat Duvarı Donatı Hesabı</title>
+  <style>
+    body { font-family: Arial, sans-serif; padding: 20px; }
+    .input-group { margin-bottom: 10px; }
+    label { display: block; font-weight: bold; }
+    input { padding: 5px; width: 100px; }
+    svg { border: 1px solid #aaa; margin-top: 20px; }
+  </style>
+</head>
+<body>
+  <h2>İstinat Duvarı Donatı Hesaplama</h2>
 
-Duvar Yüksekliği (cm): 
+  <div class="input-group">
+    <label>Duvar Yüksekliği (cm):</label>
+    <input type="number" id="height" value="300" />
+  </div>
 
-Duvar Genişliği (cm): 
+  <div class="input-group">
+    <label>Duvar Genişliği (cm):</label>
+    <input type="number" id="width" value="500" />
+  </div>
 
-Donatı Aralığı (cm): 
+  <div class="input-group">
+    <label>Donatı Aralığı (cm):</label>
+    <input type="number" id="spacing" value="10" />
+  </div>
 
-Donatı Çapı (mm): 
+  <div class="input-group">
+    <label>Donatı Çapı (mm):</label>
+    <input type="number" id="diameter" value="12" />
+  </div>
 
-Hesapla ve Çiz 
+  <button onclick="hesaplaVeCiz()">Hesapla ve Çiz</button>
 
-function hesaplaVeCiz() { const height = parseInt(document.getElementById('height').value); const width = parseInt(document.getElementById('width').value); const spacing = parseInt(document.getElementById('spacing').value); const diameter = parseInt(document.getElementById('diameter').value); const svg = document.getElementById('cizim'); svg.innerHTML = ''; const scale = 1; const duvarY = height * scale; const duvarX = width * scale; // Duvar çizimi const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect'); rect.setAttribute('x', 50); rect.setAttribute('y', 50); rect.setAttribute('width', duvarX); rect.setAttribute('height', duvarY); rect.setAttribute('fill', '#ddd'); rect.setAttribute('stroke', '#000'); svg.appendChild(rect); // Düşey donatı çizimi const adetDusey = Math.floor(width / spacing); for (let i = 0; i Düşey donatı adedi: ${adetDusey} 
+  <svg id="cizim" width="600" height="400"></svg>
 
-Yatay donatı adedi: ${adetYatay}
+  <p id="sonuc"></p>
 
-Toplam demir uzunluğu: ${(toplamDusey + toplamYatay).toFixed(2)} m
+  <script>
+    function hesaplaVeCiz() {
+      const height = parseInt(document.getElementById('height').value);
+      const width = parseInt(document.getElementById('width').value);
+      const spacing = parseInt(document.getElementById('spacing').value);
+      const diameter = parseInt(document.getElementById('diameter').value);
 
-Yaklaşık ağırlık: ${toplamKg.toFixed(2)} kg
+      const svg = document.getElementById('cizim');
+      svg.innerHTML = '';
+      const scale = 1;
+      const duvarY = height * scale;
+      const duvarX = width * scale;
 
-`; } 
+      // Duvar
+      const rect = document.createElementNS('http://www.w3.org/2000/svg', 'rect');
+      rect.setAttribute('x', 50);
+      rect.setAttribute('y', 50);
+      rect.setAttribute('width', duvarX);
+      rect.setAttribute('height', duvarY);
+      rect.setAttribute('fill', '#ddd');
+      rect.setAttribute('stroke', '#000');
+      svg.appendChild(rect);
+
+      // Düşey donatılar
+      const adetDusey = Math.floor(width / spacing);
+      for (let i = 0; i < adetDusey; i++) {
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        const x = 50 + i * spacing;
+        line.setAttribute('x1', x);
+        line.setAttribute('y1', 50);
+        line.setAttribute('x2', x);
+        line.setAttribute('y2', 50 + duvarY);
+        line.setAttribute('stroke', 'red');
+        svg.appendChild(line);
+      }
+
+      // Yatay donatılar
+      const adetYatay = Math.floor(height / spacing);
+      for (let i = 0; i < adetYatay; i++) {
+        const line = document.createElementNS('http://www.w3.org/2000/svg', 'line');
+        const y = 50 + i * spacing;
+        line.setAttribute('x1', 50);
+        line.setAttribute('y1', y);
+        line.setAttribute('x2', 50 + duvarX);
+        line.setAttribute('y2', y);
+        line.setAttribute('stroke', 'blue');
+        svg.appendChild(line);
+      }
+
+      const toplamDusey = adetDusey * height / 100;
+      const toplamYatay = adetYatay * width / 100;
+      const toplamMetre = toplamDusey + toplamYatay;
+
+      const kgPerMeter = (Math.PI * Math.pow(diameter / 10, 2)) / 4 * 7.85;
+      const toplamKg = toplamMetre * kgPerMeter;
+
+      document.getElementById('sonuc').innerHTML = `
+        Düşey donatı adedi: ${adetDusey}<br/>
+        Yatay donatı adedi: ${adetYatay}<br/>
+        Toplam demir uzunluğu: ${toplamMetre.toFixed(2)} m<br/>
+        Yaklaşık ağırlık: ${toplamKg.toFixed(2)} kg
+      `;
+    }
+  </script>
+</body>
+</html>
