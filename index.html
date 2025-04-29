@@ -1,68 +1,133 @@
-<!DOCTYPE html>
-<html lang="tr">
+<!DOCTYPE html><html lang="tr">
 <head>
   <meta charset="UTF-8" />
-  <title>İstinat Duvarı Çizimi</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>İstinat Duvarı Donatı Hesabı</title>
   <style>
-    body { font-family: Arial; padding: 20px; background: #222; color: #fff; }
-    label { display: block; margin: 10px 0 5px; }
-    input { width: 80px; padding: 5px; }
-    svg { background: #000; margin-top: 20px; }
+    body {
+      font-family: Arial, sans-serif;
+      padding: 20px;
+      background: #f7f7f7;
+    }
+    .input-group {
+      margin-bottom: 10px;
+    }
+    label {
+      font-weight: bold;
+      display: block;
+    }
+    input {
+      width: 80px;
+      padding: 4px;
+      margin-right: 10px;
+    }
+    svg {
+      border: 1px solid #ccc;
+      background: #fff;
+      margin-top: 20px;
+    }
+    #results {
+      margin-top: 20px;
+      padding: 10px;
+      background: #e0f7fa;
+    }
   </style>
 </head>
 <body>
-  <h2>İstinat Duvarı Girişleri</h2>
-
-  <div id="inputs">
-    <label>A (Sol Yükseklik): <input id="a" type="number" /></label>
-    <label>B (Girinti Genişliği): <input id="b" type="number" /></label>
-    <label>C (Girinti Derinliği): <input id="c" type="number" /></label>
-    <label>D (Üst Düz Alan Genişliği): <input id="d" type="number" /></label>
-    <label>E (Meyilli Alan Genişliği): <input id="e" type="number" /></label>
-    <label>F (Meyilli Alan Yüksekliği): <input id="f" type="number" /></label>
-    <label>G (Sağ Kenar Yüksekliği): <input id="g" type="number" /></label>
-    <label>H (Taban Genişliği): <input id="h" type="number" /></label>
-    <button onclick="ciz()">Çiz</button>
+  <h2>İstinat Duvarı Donatı Hesabı</h2>
+  <div class="input-group">
+    <label>Boyutları Girin (cm):</label>
+    A (Sol Yükseklik): <input type="number" id="A" value="200" />
+    B (Girinti Genişliği): <input type="number" id="B" value="50" />
+    C (Girinti Derinliği): <input type="number" id="C" value="100" />
+    D (Üst Düzlük): <input type="number" id="D" value="100" />
+    E (Meyilli Genişlik): <input type="number" id="E" value="40" />
+    F (Meyilli Yükseklik): <input type="number" id="F" value="40" />
+    G (Sağ Yükseklik): <input type="number" id="G" value="200" />
+    H (Taban Genişliği): <input type="number" id="H" value="400" />
   </div>
+  <div class="input-group">
+    <label>Donatı Bilgileri:</label>
+    Donatı Çapı Ø (mm): <input type="number" id="diameter" value="12" />
+    Donatı Aralığı s (cm): <input type="number" id="spacing" value="20" />
+  </div>
+  <button onclick="hesaplaVeCiz()">Çiz ve Hesapla</button><svg id="cizim" width="800" height="400"></svg>
 
-  <svg id="cizim" width="800" height="500"></svg>
-
-  <script>
-    function ciz() {
-      const a = parseFloat(document.getElementById('a').value);
-      const b = parseFloat(document.getElementById('b').value);
-      const c = parseFloat(document.getElementById('c').value);
-      const d = parseFloat(document.getElementById('d').value);
-      const e = parseFloat(document.getElementById('e').value);
-      const f = parseFloat(document.getElementById('f').value);
-      const g = parseFloat(document.getElementById('g').value);
-      const h = parseFloat(document.getElementById('h').value);
-      const scale = 2;
+  <div id="results"></div>  <script>
+    function hesaplaVeCiz() {
+      const A = parseInt(document.getElementById('A').value);
+      const B = parseInt(document.getElementById('B').value);
+      const C = parseInt(document.getElementById('C').value);
+      const D = parseInt(document.getElementById('D').value);
+      const E = parseInt(document.getElementById('E').value);
+      const F = parseInt(document.getElementById('F').value);
+      const G = parseInt(document.getElementById('G').value);
+      const H = parseInt(document.getElementById('H').value);
+      const spacing = parseInt(document.getElementById('spacing').value);
+      const diameter = parseInt(document.getElementById('diameter').value);
 
       const svg = document.getElementById('cizim');
       svg.innerHTML = '';
+      const scale = 1.5; // Görsel ölçek
+      const startX = 50, startY = 300;
 
-      const points = [
-        [0, a],
-        [0, 0],
-        [b, 0],
-        [b, c],
-        [b + d, c],
-        [b + d + e, c - f],
-        [b + d + 2 * e, c],
-        [b + d + 2 * e + (h - (b + d + 2 * e)), 0],
-        [h, 0],
-        [h, g],
-        [0, g]
+      // Noktalar (ölçeklenmiş)
+      const pts = [
+        [startX, startY - A * scale],
+        [startX + B * scale, startY - A * scale],
+        [startX + B * scale, startY - (A - C) * scale],
+        [startX + (B + D) * scale, startY - (A - C) * scale],
+        [startX + (B + D) * scale, startY - A * scale],
+        [startX + (B + D + E) * scale, startY - A * scale],
+        [startX + (B + D + E) * scale, startY - (A - F) * scale],
+        [startX + (B + D + 2 * E) * scale, startY - (A - F) * scale],
+        [startX + (B + D + 2 * E) * scale, startY - G * scale],
+        [startX + H * scale, startY - G * scale],
+        [startX + H * scale, startY],
+        [startX, startY]
       ];
 
-      const path = document.createElementNS("http://www.w3.org/2000/svg", "polygon");
-      path.setAttribute("points", points.map(p => `${p[0]*scale},${p[1]*scale}`).join(" "));
+      // Kenar çizimi
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", "M" + pts.map(p => p.join(",")).join(" L") + " Z");
+      path.setAttribute("stroke", "#000");
       path.setAttribute("fill", "none");
-      path.setAttribute("stroke", "yellow");
-      path.setAttribute("stroke-width", "1");
       svg.appendChild(path);
+
+      // Harf etiketleri (A, B, C...)
+      const harfler = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
+      harfler.forEach((harf, i) => {
+        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
+        text.setAttribute("x", pts[i + 1][0] - 10);
+        text.setAttribute("y", pts[i + 1][1] - 10);
+        text.textContent = harf;
+        text.setAttribute("fill", "red");
+        text.setAttribute("font-size", "12px");
+        svg.appendChild(text);
+      });
+
+      // Donatı çizimi (örnek olarak düşey donatılar)
+      let adet = Math.floor(H / spacing);
+      let toplamBoy = 0;
+      for (let i = 0; i <= adet; i++) {
+        const x = startX + i * spacing * scale;
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", x);
+        line.setAttribute("y1", startY);
+        line.setAttribute("x2", x);
+        line.setAttribute("y2", startY - A * scale);
+        line.setAttribute("stroke", "blue");
+        svg.appendChild(line);
+        toplamBoy += A / 100; // metre cinsinden
+      }
+
+      const birimAgirlik = (Math.PI * Math.pow(diameter / 10, 2)) / 4 * 7.85;
+      const toplamKg = toplamBoy * birimAgirlik;
+
+      document.getElementById("results").innerHTML =
+        `Düşey Donatı Adedi: ${adet}<br>
+        Toplam Uzunluk: ${toplamBoy.toFixed(2)} m<br>
+        Yaklaşık Ağırlık: ${toplamKg.toFixed(2)} kg`;
     }
-  </script>
-</body>
+  </script></body>
 </html>
