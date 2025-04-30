@@ -1,133 +1,126 @@
 <!DOCTYPE html><html lang="tr">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>İstinat Duvarı Donatı Hesabı</title>
+  <title>3B Donatı Modeli</title>
   <style>
-    body {
-      font-family: Arial, sans-serif;
-      padding: 20px;
-      background: #f7f7f7;
-    }
-    .input-group {
-      margin-bottom: 10px;
-    }
-    label {
-      font-weight: bold;
-      display: block;
-    }
-    input {
-      width: 80px;
-      padding: 4px;
-      margin-right: 10px;
-    }
-    svg {
-      border: 1px solid #ccc;
-      background: #fff;
-      margin-top: 20px;
-    }
-    #results {
-      margin-top: 20px;
+    body { margin: 0; overflow: hidden; font-family: sans-serif; }
+    canvas { display: block; }
+    #panel {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      background: rgba(255,255,255,0.9);
       padding: 10px;
-      background: #e0f7fa;
+      border-radius: 8px;
+      z-index: 10;
     }
+    input { width: 60px; margin: 3px; }
   </style>
 </head>
 <body>
-  <h2>İstinat Duvarı Donatı Hesabı</h2>
-  <div class="input-group">
-    <label>Boyutları Girin (cm):</label>
-    A (Sol Yükseklik): <input type="number" id="A" value="200" />
-    B (Girinti Genişliği): <input type="number" id="B" value="50" />
-    C (Girinti Derinliği): <input type="number" id="C" value="100" />
-    D (Üst Düzlük): <input type="number" id="D" value="100" />
-    E (Meyilli Genişlik): <input type="number" id="E" value="40" />
-    F (Meyilli Yükseklik): <input type="number" id="F" value="40" />
-    G (Sağ Yükseklik): <input type="number" id="G" value="200" />
-    H (Taban Genişliği): <input type="number" id="H" value="400" />
-  </div>
-  <div class="input-group">
-    <label>Donatı Bilgileri:</label>
-    Donatı Çapı Ø (mm): <input type="number" id="diameter" value="12" />
-    Donatı Aralığı s (cm): <input type="number" id="spacing" value="20" />
-  </div>
-  <button onclick="hesaplaVeCiz()">Çiz ve Hesapla</button><svg id="cizim" width="800" height="400"></svg>
+  <div id="panel">
+    <label>A: <input type="number" id="A" value="200" /></label>
+    <label>B: <input type="number" id="B" value="50" /></label>
+    <label>C: <input type="number" id="C" value="300" /></label><br>
+    <label>D: <input type="number" id="D" value="30" /></label>
+    <label>E: <input type="number" id="E" value="50" /></label>
+    <label>F: <input type="number" id="F" value="50" /></label><br>
+    <label>G: <input type="number" id="G" value="100" /></label>
+    <button onclick="updateModel()">Güncelle</button>
+  </div>  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r148/three.min.js"></script>  <script>
+    let scene, camera, renderer;
+    let donatilar = [];
+    const pasPayi = 2.5;
+    const gownyeBoyu = 20;
 
-  <div id="results"></div>  <script>
-    function hesaplaVeCiz() {
-      const A = parseInt(document.getElementById('A').value);
-      const B = parseInt(document.getElementById('B').value);
-      const C = parseInt(document.getElementById('C').value);
-      const D = parseInt(document.getElementById('D').value);
-      const E = parseInt(document.getElementById('E').value);
-      const F = parseInt(document.getElementById('F').value);
-      const G = parseInt(document.getElementById('G').value);
-      const H = parseInt(document.getElementById('H').value);
-      const spacing = parseInt(document.getElementById('spacing').value);
-      const diameter = parseInt(document.getElementById('diameter').value);
+    init();
+    drawModel();
 
-      const svg = document.getElementById('cizim');
-      svg.innerHTML = '';
-      const scale = 1.5; // Görsel ölçek
-      const startX = 50, startY = 300;
+    function init() {
+      scene = new THREE.Scene();
+      scene.background = new THREE.Color(0xf0f0f0);
 
-      // Noktalar (ölçeklenmiş)
-      const pts = [
-        [startX, startY - A * scale],
-        [startX + B * scale, startY - A * scale],
-        [startX + B * scale, startY - (A - C) * scale],
-        [startX + (B + D) * scale, startY - (A - C) * scale],
-        [startX + (B + D) * scale, startY - A * scale],
-        [startX + (B + D + E) * scale, startY - A * scale],
-        [startX + (B + D + E) * scale, startY - (A - F) * scale],
-        [startX + (B + D + 2 * E) * scale, startY - (A - F) * scale],
-        [startX + (B + D + 2 * E) * scale, startY - G * scale],
-        [startX + H * scale, startY - G * scale],
-        [startX + H * scale, startY],
-        [startX, startY]
-      ];
+      camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 1000);
+      camera.position.set(300, 300, 300);
+      camera.lookAt(scene.position);
 
-      // Kenar çizimi
-      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-      path.setAttribute("d", "M" + pts.map(p => p.join(",")).join(" L") + " Z");
-      path.setAttribute("stroke", "#000");
-      path.setAttribute("fill", "none");
-      svg.appendChild(path);
+      const light = new THREE.DirectionalLight(0xffffff, 1);
+      light.position.set(1, 1, 1).normalize();
+      scene.add(light);
 
-      // Harf etiketleri (A, B, C...)
-      const harfler = ['A', 'B', 'C', 'D', 'E', 'F', 'G'];
-      harfler.forEach((harf, i) => {
-        const text = document.createElementNS("http://www.w3.org/2000/svg", "text");
-        text.setAttribute("x", pts[i + 1][0] - 10);
-        text.setAttribute("y", pts[i + 1][1] - 10);
-        text.textContent = harf;
-        text.setAttribute("fill", "red");
-        text.setAttribute("font-size", "12px");
-        svg.appendChild(text);
+      renderer = new THREE.WebGLRenderer({antialias: true});
+      renderer.setSize(window.innerWidth, window.innerHeight);
+      document.body.appendChild(renderer.domElement);
+
+      window.addEventListener('resize', () => {
+        camera.aspect = window.innerWidth / window.innerHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(window.innerWidth, window.innerHeight);
       });
 
-      // Donatı çizimi (örnek olarak düşey donatılar)
-      let adet = Math.floor(H / spacing);
-      let toplamBoy = 0;
+      animate();
+    }
+
+    function animate() {
+      requestAnimationFrame(animate);
+      renderer.render(scene, camera);
+    }
+
+    function clearScene() {
+      donatilar.forEach(obj => scene.remove(obj));
+      donatilar = [];
+    }
+
+    function drawModel() {
+      clearScene();
+
+      const A = parseFloat(document.getElementById('A').value);
+      const B = parseFloat(document.getElementById('B').value);
+      const C = parseFloat(document.getElementById('C').value);
+      const D = parseFloat(document.getElementById('D').value);
+      const E = parseFloat(document.getElementById('E').value);
+      const F = parseFloat(document.getElementById('F').value);
+      const G = parseFloat(document.getElementById('G').value);
+
+      // Beton duvar hacmi (örnek kutu)
+      const beton = new THREE.Mesh(
+        new THREE.BoxGeometry(C, A, G),
+        new THREE.MeshBasicMaterial({color: 0xcccccc, wireframe: true})
+      );
+      beton.position.set(C/2, A/2, G/2);
+      scene.add(beton);
+      donatilar.push(beton);
+
+      // Donatılar (dikey)
+      const demirCap = 1.2; // 12 mm donatı = 1.2 cm
+      const spacing = 10; // 10 cm aralık
+      const iceridekiYukseklik = A - 2 * pasPayi - gownyeBoyu;
+      const adet = Math.floor((C - 2 * pasPayi) / spacing);
       for (let i = 0; i <= adet; i++) {
-        const x = startX + i * spacing * scale;
-        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-        line.setAttribute("x1", x);
-        line.setAttribute("y1", startY);
-        line.setAttribute("x2", x);
-        line.setAttribute("y2", startY - A * scale);
-        line.setAttribute("stroke", "blue");
-        svg.appendChild(line);
-        toplamBoy += A / 100; // metre cinsinden
+        const x = pasPayi + i * spacing;
+        const main = new THREE.Mesh(
+          new THREE.CylinderGeometry(demirCap/2, demirCap/2, iceridekiYukseklik, 8),
+          new THREE.MeshBasicMaterial({color: 0xff0000})
+        );
+        main.rotation.z = Math.PI / 2;
+        main.position.set(x, (iceridekiYukseklik/2 + pasPayi), G/2);
+        scene.add(main);
+        donatilar.push(main);
+
+        // Gönyeli uç (alt kısım)
+        const gonyeli = new THREE.Mesh(
+          new THREE.CylinderGeometry(demirCap/2, demirCap/2, gownyeBoyu, 8),
+          new THREE.MeshBasicMaterial({color: 0xff0000})
+        );
+        gonyeli.position.set(x, pasPayi + gownyeBoyu/2, G/2 - gownyeBoyu/2);
+        gonyeli.rotation.x = Math.PI / 2;
+        scene.add(gonyeli);
+        donatilar.push(gonyeli);
       }
+    }
 
-      const birimAgirlik = (Math.PI * Math.pow(diameter / 10, 2)) / 4 * 7.85;
-      const toplamKg = toplamBoy * birimAgirlik;
-
-      document.getElementById("results").innerHTML =
-        `Düşey Donatı Adedi: ${adet}<br>
-        Toplam Uzunluk: ${toplamBoy.toFixed(2)} m<br>
-        Yaklaşık Ağırlık: ${toplamKg.toFixed(2)} kg`;
+    function updateModel() {
+      drawModel();
     }
   </script></body>
 </html>
