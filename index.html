@@ -1,16 +1,16 @@
-<!DOCTYPE html><html lang="tr">
+<!DOCTYPE html>
+<html lang="tr">
 <head>
-  <meta charset="UTF-8" />
-  <title>3B Donatı Modeli</title>
+  <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>3B Donatı Modeli</title>
   <style>
     body { margin: 0; overflow: hidden; font-family: sans-serif; }
-    canvas { display: block; }
     #panel {
       position: absolute;
       top: 10px;
       left: 10px;
-      background: rgba(255,255,255,0.95);
+      background: white;
       padding: 10px;
       border-radius: 8px;
       z-index: 10;
@@ -26,43 +26,35 @@
 <body>
   <div id="panel">
     <label>A (Yükseklik): <input type="number" id="A" value="200" /></label>
-    <label>B: <input type="number" id="B" value="50" /></label>
     <label>C (Genişlik): <input type="number" id="C" value="300" /></label>
-    <label>D: <input type="number" id="D" value="30" /></label>
-    <label>E: <input type="number" id="E" value="50" /></label>
-    <label>F: <input type="number" id="F" value="50" /></label>
     <label>G (Kalınlık): <input type="number" id="G" value="100" /></label>
-    <button onclick="updateModel()">Güncelle</button>
-  </div>  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r148/three.min.js"></script>  <script>
-    let scene, camera, renderer;
-    let donatilar = [];
-    const pasPayi = 2.5;
-    const gownyeBoyu = 20;
+    <button onclick="drawModel()">Güncelle</button>
+  </div>
 
-    init();
-    drawModel();
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r148/three.min.js"></script>
+  <script>
+    let scene, camera, renderer;
+    let objects = [];
+
+    const pas = 2.5;
+    const spacing = 10;
+    const demirCap = 1.2;
+    const gonyeboyu = 20;
 
     function init() {
       scene = new THREE.Scene();
       scene.background = new THREE.Color(0xf0f0f0);
+      camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
+      camera.position.set(400, 300, 400);
+      camera.lookAt(0, 100, 0);
 
-      camera = new THREE.PerspectiveCamera(50, window.innerWidth/window.innerHeight, 0.1, 1000);
-      camera.position.set(300, 300, 300);
-      camera.lookAt(scene.position);
-
-      const light = new THREE.DirectionalLight(0xffffff, 1);
-      light.position.set(1, 1, 1).normalize();
-      scene.add(light);
-
-      renderer = new THREE.WebGLRenderer({antialias: true});
+      renderer = new THREE.WebGLRenderer({ antialias: true });
       renderer.setSize(window.innerWidth, window.innerHeight);
       document.body.appendChild(renderer.domElement);
 
-      window.addEventListener('resize', () => {
-        camera.aspect = window.innerWidth / window.innerHeight;
-        camera.updateProjectionMatrix();
-        renderer.setSize(window.innerWidth, window.innerHeight);
-      });
+      const light = new THREE.DirectionalLight(0xffffff, 1);
+      light.position.set(1, 1, 1);
+      scene.add(light);
 
       animate();
     }
@@ -72,74 +64,60 @@
       renderer.render(scene, camera);
     }
 
-    function clearScene() {
-      donatilar.forEach(obj => scene.remove(obj));
-      donatilar = [];
-    }
-
     function drawModel() {
-      clearScene();
+      // Temizle
+      for (let obj of objects) scene.remove(obj);
+      objects = [];
 
       const A = parseFloat(document.getElementById('A').value);
-      const B = parseFloat(document.getElementById('B').value);
       const C = parseFloat(document.getElementById('C').value);
-      const D = parseFloat(document.getElementById('D').value);
-      const E = parseFloat(document.getElementById('E').value);
-      const F = parseFloat(document.getElementById('F').value);
       const G = parseFloat(document.getElementById('G').value);
 
+      // Beton kutusu
       const beton = new THREE.Mesh(
         new THREE.BoxGeometry(C, A, G),
-        new THREE.MeshBasicMaterial({color: 0xcccccc, wireframe: true})
+        new THREE.MeshBasicMaterial({ color: 0xcccccc, wireframe: true })
       );
       beton.position.set(C/2, A/2, G/2);
       scene.add(beton);
-      donatilar.push(beton);
+      objects.push(beton);
 
-      const demirCap = 1.2;
-      const spacing = 10;
-      const iceridekiYukseklik = A - 2 * pasPayi - gownyeBoyu;
-      const iceridekiGenislik = C - 2 * pasPayi - gownyeBoyu;
+      const içGenişlik = C - 2 * pas;
+      const içYükseklik = A - 2 * pas;
+      const içDerinlik = G - 2 * pas;
 
-      const dikeyAdet = Math.floor((C - 2 * pasPayi) / spacing);
-      const yatayAdet = Math.floor((A - 2 * pasPayi) / spacing);
+      const yatayAdet = Math.floor(içYükseklik / spacing);
+      const dikeyAdet = Math.floor(içGenişlik / spacing);
 
+      // Dikey donatılar
       for (let i = 0; i <= dikeyAdet; i++) {
-        const x = pasPayi + i * spacing;
-        const main = new THREE.Mesh(
-          new THREE.CylinderGeometry(demirCap/2, demirCap/2, iceridekiYukseklik, 8),
-          new THREE.MeshBasicMaterial({color: 0xff0000})
+        const x = pas + i * spacing;
+        const cyl = new THREE.Mesh(
+          new THREE.CylinderGeometry(demirCap/2, demirCap/2, içYükseklik, 8),
+          new THREE.MeshBasicMaterial({ color: 0xff0000 })
         );
-        main.rotation.z = Math.PI / 2;
-        main.position.set(x, (iceridekiYukseklik/2 + pasPayi), G/2);
-        scene.add(main);
-        donatilar.push(main);
-
-        const gonyeli = new THREE.Mesh(
-          new THREE.CylinderGeometry(demirCap/2, demirCap/2, gownyeBoyu, 8),
-          new THREE.MeshBasicMaterial({color: 0xff0000})
-        );
-        gonyeli.position.set(x, pasPayi + gownyeBoyu/2, G/2 - gownyeBoyu/2);
-        gonyeli.rotation.x = Math.PI / 2;
-        scene.add(gonyeli);
-        donatilar.push(gonyeli);
+        cyl.rotation.z = Math.PI / 2;
+        cyl.position.set(x, içYükseklik/2 + pas, G/2);
+        scene.add(cyl);
+        objects.push(cyl);
       }
 
+      // Yatay donatılar
       for (let j = 0; j <= yatayAdet; j++) {
-        const y = pasPayi + j * spacing;
-        const yatay = new THREE.Mesh(
-          new THREE.CylinderGeometry(demirCap/2, demirCap/2, iceridekiGenislik, 8),
-          new THREE.MeshBasicMaterial({color: 0x0000ff})
+        const y = pas + j * spacing;
+        const cyl = new THREE.Mesh(
+          new THREE.CylinderGeometry(demirCap/2, demirCap/2, içGenişlik, 8),
+          new THREE.MeshBasicMaterial({ color: 0x0000ff })
         );
-        yatay.rotation.y = Math.PI / 2;
-        yatay.position.set(C/2, y, G/2);
-        scene.add(yatay);
-        donatilar.push(yatay);
+        cyl.rotation.y = Math.PI / 2;
+        cyl.position.set(C/2, y, G/2);
+        scene.add(cyl);
+        objects.push(cyl);
       }
     }
 
-    function updateModel() {
-      drawModel();
-    }
-  </script></body>
+    init();
+    drawModel();
+  </script>
+</body>
 </html>
