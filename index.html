@@ -1,123 +1,94 @@
-<!DOCTYPE html>
-<html lang="tr">
+<!DOCTYPE html><html lang="tr">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>3B Donatı Modeli</title>
+  <title>İstinat Duvarı Donatı Hesabı</title>
   <style>
-    body { margin: 0; overflow: hidden; font-family: sans-serif; }
-    #panel {
-      position: absolute;
-      top: 10px;
-      left: 10px;
-      background: white;
-      padding: 10px;
-      border-radius: 8px;
-      z-index: 10;
-      display: flex;
-      flex-direction: column;
-      gap: 6px;
-    }
-    input { width: 80px; }
-    label { font-size: 14px; }
-    button { padding: 6px 10px; font-size: 14px; }
+    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
+    .container { padding: 1rem; }
+    .inputs { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem; }
+    .inputs label { display: flex; flex-direction: column; font-size: 0.9rem; }
+    svg { width: 100%; max-width: 600px; height: auto; border: 1px solid #ccc; background: #f9f9f9; }
+    .results { margin-top: 1rem; font-size: 0.95rem; }
   </style>
 </head>
 <body>
-  <div id="panel">
-    <label>A (Yükseklik): <input type="number" id="A" value="200" /></label>
-    <label>C (Genişlik): <input type="number" id="C" value="300" /></label>
-    <label>G (Kalınlık): <input type="number" id="G" value="100" /></label>
-    <button onclick="drawModel()">Güncelle</button>
-  </div>
+  <div class="container">
+    <h2>İstinat Duvarı Donatı Hesaplama</h2>
+    <div class="inputs">
+      <label>A (yükseklik cm): <input type="number" id="A" value="300"></label>
+      <label>B (taban cm): <input type="number" id="B" value="100"></label>
+      <label>C (üst cm): <input type="number" id="C" value="30"></label>
+      <label>D (arka topuk cm): <input type="number" id="D" value="50"></label>
+      <label>E (ön topuk cm): <input type="number" id="E" value="20"></label>
+    </div>
+    <button onclick="guncelle()">Güncelle</button>
+    <svg id="cizim" viewBox="0 0 600 400"></svg>
+    <div class="results" id="sonuc"></div>
+  </div>  <script>
+    function guncelle() {
+      const A = +document.getElementById("A").value;
+      const B = +document.getElementById("B").value;
+      const C = +document.getElementById("C").value;
+      const D = +document.getElementById("D").value;
+      const E = +document.getElementById("E").value;
 
-  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r148/three.min.js"></script>
-  <script>
-    let scene, camera, renderer;
-    let objects = [];
+      const pas = 2.5; // cm
+      const spacing = 10; // cm
+      const gonyeboyu = 20; // cm
+      const demirCap = 1.2; // cm çap
+      const birimAgirlik = 0.888; // kg/m
 
-    const pas = 2.5;
-    const spacing = 10;
-    const demirCap = 1.2;
-    const gonyeboyu = 20;
+      const svg = document.getElementById("cizim");
+      svg.innerHTML = "";
 
-    function init() {
-      scene = new THREE.Scene();
-      scene.background = new THREE.Color(0xf0f0f0);
-      camera = new THREE.PerspectiveCamera(50, window.innerWidth / window.innerHeight, 0.1, 1000);
-      camera.position.set(400, 300, 400);
-      camera.lookAt(0, 100, 0);
+      // Duvar çizimi (ölçekli değil, sadece şematik)
+      const scale = 1.5;
+      const offsetX = 100;
+      const offsetY = 300;
 
-      renderer = new THREE.WebGLRenderer({ antialias: true });
-      renderer.setSize(window.innerWidth, window.innerHeight);
-      document.body.appendChild(renderer.domElement);
+      const duvarPath = `M ${offsetX},${offsetY} 
+        v ${-A * scale} 
+        l ${C * scale},0 
+        v ${(A - B) * scale} 
+        h ${E * scale} 
+        v ${B * scale} 
+        h ${-(D + C + E) * scale} 
+        Z`;
 
-      const light = new THREE.DirectionalLight(0xffffff, 1);
-      light.position.set(1, 1, 1);
-      scene.add(light);
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", duvarPath);
+      path.setAttribute("fill", "#ddd");
+      path.setAttribute("stroke", "#333");
+      svg.appendChild(path);
 
-      animate();
-    }
+      // Donatı çizimi (sadece düşey)
+      const icYukseklik = A - 2 * pas;
+      const adet = Math.floor(icYukseklik / spacing);
+      let toplamBoy = 0;
 
-    function animate() {
-      requestAnimationFrame(animate);
-      renderer.render(scene, camera);
-    }
+      for (let i = 0; i < adet; i++) {
+        const y = offsetY - pas * scale - i * spacing * scale;
+        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
+        line.setAttribute("x1", offsetX + pas * scale);
+        line.setAttribute("y1", y);
+        line.setAttribute("x2", offsetX + pas * scale);
+        line.setAttribute("y2", y - C * scale);
+        line.setAttribute("stroke", "red");
+        line.setAttribute("stroke-width", "1.5");
+        svg.appendChild(line);
 
-    function drawModel() {
-      // Temizle
-      for (let obj of objects) scene.remove(obj);
-      objects = [];
-
-      const A = parseFloat(document.getElementById('A').value);
-      const C = parseFloat(document.getElementById('C').value);
-      const G = parseFloat(document.getElementById('G').value);
-
-      // Beton kutusu
-      const beton = new THREE.Mesh(
-        new THREE.BoxGeometry(C, A, G),
-        new THREE.MeshBasicMaterial({ color: 0xcccccc, wireframe: true })
-      );
-      beton.position.set(C/2, A/2, G/2);
-      scene.add(beton);
-      objects.push(beton);
-
-      const içGenişlik = C - 2 * pas;
-      const içYükseklik = A - 2 * pas;
-      const içDerinlik = G - 2 * pas;
-
-      const yatayAdet = Math.floor(içYükseklik / spacing);
-      const dikeyAdet = Math.floor(içGenişlik / spacing);
-
-      // Dikey donatılar
-      for (let i = 0; i <= dikeyAdet; i++) {
-        const x = pas + i * spacing;
-        const cyl = new THREE.Mesh(
-          new THREE.CylinderGeometry(demirCap/2, demirCap/2, içYükseklik, 8),
-          new THREE.MeshBasicMaterial({ color: 0xff0000 })
-        );
-        cyl.rotation.z = Math.PI / 2;
-        cyl.position.set(x, içYükseklik/2 + pas, G/2);
-        scene.add(cyl);
-        objects.push(cyl);
+        toplamBoy += (C + 2 * gonyeboyu) / 100; // metre cinsinden
       }
 
-      // Yatay donatılar
-      for (let j = 0; j <= yatayAdet; j++) {
-        const y = pas + j * spacing;
-        const cyl = new THREE.Mesh(
-          new THREE.CylinderGeometry(demirCap/2, demirCap/2, içGenişlik, 8),
-          new THREE.MeshBasicMaterial({ color: 0x0000ff })
-        );
-        cyl.rotation.y = Math.PI / 2;
-        cyl.position.set(C/2, y, G/2);
-        scene.add(cyl);
-        objects.push(cyl);
-      }
+      const toplamKg = (toplamBoy * birimAgirlik).toFixed(2);
+
+      document.getElementById("sonuc").innerHTML =
+        `Donatı adedi: ${adet} <br>
+         Toplam boy: ${toplamBoy.toFixed(2)} m <br>
+         Ağırlık: ${toplamKg} kg`;
     }
 
-    init();
-    drawModel();
-  </script>
-</body>
+    guncelle();
+  </script></body>
 </html>
