@@ -2,6 +2,7 @@
 <head>
   <meta charset="UTF-8" />
   <title>3B Donatı Modeli</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <style>
     body { margin: 0; overflow: hidden; font-family: sans-serif; }
     canvas { display: block; }
@@ -9,23 +10,28 @@
       position: absolute;
       top: 10px;
       left: 10px;
-      background: rgba(255,255,255,0.9);
+      background: rgba(255,255,255,0.95);
       padding: 10px;
       border-radius: 8px;
       z-index: 10;
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
     }
-    input { width: 60px; margin: 3px; }
+    input { width: 80px; }
+    label { font-size: 14px; }
+    button { padding: 6px 10px; font-size: 14px; }
   </style>
 </head>
 <body>
   <div id="panel">
-    <label>A: <input type="number" id="A" value="200" /></label>
+    <label>A (Yükseklik): <input type="number" id="A" value="200" /></label>
     <label>B: <input type="number" id="B" value="50" /></label>
-    <label>C: <input type="number" id="C" value="300" /></label><br>
+    <label>C (Genişlik): <input type="number" id="C" value="300" /></label>
     <label>D: <input type="number" id="D" value="30" /></label>
     <label>E: <input type="number" id="E" value="50" /></label>
-    <label>F: <input type="number" id="F" value="50" /></label><br>
-    <label>G: <input type="number" id="G" value="100" /></label>
+    <label>F: <input type="number" id="F" value="50" /></label>
+    <label>G (Kalınlık): <input type="number" id="G" value="100" /></label>
     <button onclick="updateModel()">Güncelle</button>
   </div>  <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r148/three.min.js"></script>  <script>
     let scene, camera, renderer;
@@ -82,7 +88,6 @@
       const F = parseFloat(document.getElementById('F').value);
       const G = parseFloat(document.getElementById('G').value);
 
-      // Beton duvar hacmi (örnek kutu)
       const beton = new THREE.Mesh(
         new THREE.BoxGeometry(C, A, G),
         new THREE.MeshBasicMaterial({color: 0xcccccc, wireframe: true})
@@ -91,12 +96,15 @@
       scene.add(beton);
       donatilar.push(beton);
 
-      // Donatılar (dikey)
-      const demirCap = 1.2; // 12 mm donatı = 1.2 cm
-      const spacing = 10; // 10 cm aralık
+      const demirCap = 1.2;
+      const spacing = 10;
       const iceridekiYukseklik = A - 2 * pasPayi - gownyeBoyu;
-      const adet = Math.floor((C - 2 * pasPayi) / spacing);
-      for (let i = 0; i <= adet; i++) {
+      const iceridekiGenislik = C - 2 * pasPayi - gownyeBoyu;
+
+      const dikeyAdet = Math.floor((C - 2 * pasPayi) / spacing);
+      const yatayAdet = Math.floor((A - 2 * pasPayi) / spacing);
+
+      for (let i = 0; i <= dikeyAdet; i++) {
         const x = pasPayi + i * spacing;
         const main = new THREE.Mesh(
           new THREE.CylinderGeometry(demirCap/2, demirCap/2, iceridekiYukseklik, 8),
@@ -107,7 +115,6 @@
         scene.add(main);
         donatilar.push(main);
 
-        // Gönyeli uç (alt kısım)
         const gonyeli = new THREE.Mesh(
           new THREE.CylinderGeometry(demirCap/2, demirCap/2, gownyeBoyu, 8),
           new THREE.MeshBasicMaterial({color: 0xff0000})
@@ -116,6 +123,18 @@
         gonyeli.rotation.x = Math.PI / 2;
         scene.add(gonyeli);
         donatilar.push(gonyeli);
+      }
+
+      for (let j = 0; j <= yatayAdet; j++) {
+        const y = pasPayi + j * spacing;
+        const yatay = new THREE.Mesh(
+          new THREE.CylinderGeometry(demirCap/2, demirCap/2, iceridekiGenislik, 8),
+          new THREE.MeshBasicMaterial({color: 0x0000ff})
+        );
+        yatay.rotation.y = Math.PI / 2;
+        yatay.position.set(C/2, y, G/2);
+        scene.add(yatay);
+        donatilar.push(yatay);
       }
     }
 
