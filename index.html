@@ -1,94 +1,267 @@
-<!DOCTYPE html><html lang="tr">
+<!DOCTYPE html>
+<html lang="tr">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>İstinat Duvarı Donatı Hesabı</title>
-  <style>
-    body { font-family: Arial, sans-serif; margin: 0; padding: 0; }
-    .container { padding: 1rem; }
-    .inputs { display: flex; flex-wrap: wrap; gap: 1rem; margin-bottom: 1rem; }
-    .inputs label { display: flex; flex-direction: column; font-size: 0.9rem; }
-    svg { width: 100%; max-width: 600px; height: auto; border: 1px solid #ccc; background: #f9f9f9; }
-    .results { margin-top: 1rem; font-size: 0.95rem; }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Betonarme Duvar Hesaplama Aracı</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1000px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        h1 {
+            color: #2c3e50;
+            text-align: center;
+        }
+        .input-section {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .result-section {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        .visualization {
+            background-color: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            text-align: center;
+        }
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+        }
+        input {
+            width: 100%;
+            padding: 8px;
+            margin-bottom: 15px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            box-sizing: border-box;
+        }
+        button {
+            background-color: #3498db;
+            color: white;
+            border: none;
+            padding: 10px 15px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            width: 100%;
+        }
+        button:hover {
+            background-color: #2980b9;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        th, td {
+            border: 1px solid #ddd;
+            padding: 8px;
+            text-align: left;
+        }
+        th {
+            background-color: #f2f2f2;
+        }
+        .wall-canvas {
+            border: 1px solid #ddd;
+            margin-top: 20px;
+            background-color: #f9f9f9;
+        }
+        .result-item {
+            margin-bottom: 10px;
+            padding: 10px;
+            background-color: #e8f4fc;
+            border-radius: 4px;
+        }
+        .result-value {
+            font-weight: bold;
+            color: #2c3e50;
+        }
+    </style>
 </head>
 <body>
-  <div class="container">
-    <h2>İstinat Duvarı Donatı Hesaplama</h2>
-    <div class="inputs">
-      <label>A (yükseklik cm): <input type="number" id="A" value="300"></label>
-      <label>B (taban cm): <input type="number" id="B" value="100"></label>
-      <label>C (üst cm): <input type="number" id="C" value="30"></label>
-      <label>D (arka topuk cm): <input type="number" id="D" value="50"></label>
-      <label>E (ön topuk cm): <input type="number" id="E" value="20"></label>
+    <h1>Betonarme Duvar Hesaplama Aracı</h1>
+    
+    <div class="input-section">
+        <h2>Giriş Bilgileri</h2>
+        <label for="length">Duvar Uzunluğu (m):</label>
+        <input type="number" id="length" step="0.01" min="0.1" value="5.0">
+        
+        <label for="height">Duvar Yüksekliği (m):</label>
+        <input type="number" id="height" step="0.01" min="0.1" value="3.0">
+        
+        <label for="thickness">Duvar Kalınlığı (cm):</label>
+        <input type="number" id="thickness" step="1" min="10" value="20">
+        
+        <label for="steel-diameter">Donatı Çapı (mm):</label>
+        <input type="number" id="steel-diameter" step="1" min="8" value="12">
+        
+        <label for="horizontal-spacing">Yatay Donatı Aralığı (cm):</label>
+        <input type="number" id="horizontal-spacing" step="1" min="10" value="20">
+        
+        <label for="vertical-spacing">Düşey Donatı Aralığı (cm):</label>
+        <input type="number" id="vertical-spacing" step="1" min="10" value="20">
+        
+        <button onclick="calculate()">Hesapla</button>
     </div>
-    <button onclick="guncelle()">Güncelle</button>
-    <svg id="cizim" viewBox="0 0 600 400"></svg>
-    <div class="results" id="sonuc"></div>
-  </div>  <script>
-    function guncelle() {
-      const A = +document.getElementById("A").value;
-      const B = +document.getElementById("B").value;
-      const C = +document.getElementById("C").value;
-      const D = +document.getElementById("D").value;
-      const E = +document.getElementById("E").value;
+    
+    <div class="result-section">
+        <h2>Hesaplama Sonuçları</h2>
+        <div id="results"></div>
+    </div>
+    
+    <div class="visualization">
+        <h2>Duvar Görselleştirme</h2>
+        <canvas id="wallCanvas" class="wall-canvas" width="800" height="400"></canvas>
+    </div>
 
-      const pas = 2.5; // cm
-      const spacing = 10; // cm
-      const gonyeboyu = 20; // cm
-      const demirCap = 1.2; // cm çap
-      const birimAgirlik = 0.888; // kg/m
-
-      const svg = document.getElementById("cizim");
-      svg.innerHTML = "";
-
-      // Duvar çizimi (ölçekli değil, sadece şematik)
-      const scale = 1.5;
-      const offsetX = 100;
-      const offsetY = 300;
-
-      const duvarPath = `M ${offsetX},${offsetY} 
-        v ${-A * scale} 
-        l ${C * scale},0 
-        v ${(A - B) * scale} 
-        h ${E * scale} 
-        v ${B * scale} 
-        h ${-(D + C + E) * scale} 
-        Z`;
-
-      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
-      path.setAttribute("d", duvarPath);
-      path.setAttribute("fill", "#ddd");
-      path.setAttribute("stroke", "#333");
-      svg.appendChild(path);
-
-      // Donatı çizimi (sadece düşey)
-      const icYukseklik = A - 2 * pas;
-      const adet = Math.floor(icYukseklik / spacing);
-      let toplamBoy = 0;
-
-      for (let i = 0; i < adet; i++) {
-        const y = offsetY - pas * scale - i * spacing * scale;
-        const line = document.createElementNS("http://www.w3.org/2000/svg", "line");
-        line.setAttribute("x1", offsetX + pas * scale);
-        line.setAttribute("y1", y);
-        line.setAttribute("x2", offsetX + pas * scale);
-        line.setAttribute("y2", y - C * scale);
-        line.setAttribute("stroke", "red");
-        line.setAttribute("stroke-width", "1.5");
-        svg.appendChild(line);
-
-        toplamBoy += (C + 2 * gonyeboyu) / 100; // metre cinsinden
-      }
-
-      const toplamKg = (toplamBoy * birimAgirlik).toFixed(2);
-
-      document.getElementById("sonuc").innerHTML =
-        `Donatı adedi: ${adet} <br>
-         Toplam boy: ${toplamBoy.toFixed(2)} m <br>
-         Ağırlık: ${toplamKg} kg`;
-    }
-
-    guncelle();
-  </script></body>
+    <script>
+        function calculate() {
+            // Giriş değerlerini al
+            const length = parseFloat(document.getElementById('length').value);
+            const height = parseFloat(document.getElementById('height').value);
+            const thickness = parseFloat(document.getElementById('thickness').value) / 100; // cm'den m'ye çevir
+            const steelDiameter = parseFloat(document.getElementById('steel-diameter').value);
+            const horizontalSpacing = parseFloat(document.getElementById('horizontal-spacing').value) / 100; // cm'den m'ye çevir
+            const verticalSpacing = parseFloat(document.getElementById('vertical-spacing').value) / 100; // cm'den m'ye çevir
+            
+            // Hesaplamalar
+            // Beton hacmi (m³)
+            const concreteVolume = length * height * thickness;
+            
+            // Donatı hesabı
+            // Yatay donatı sayısı
+            const horizontalBars = Math.ceil(height / horizontalSpacing) + 1;
+            // Düşey donatı sayısı
+            const verticalBars = Math.ceil(length / verticalSpacing) + 1;
+            
+            // Toplam donatı uzunluğu (m)
+            const totalHorizontalLength = horizontalBars * length;
+            const totalVerticalLength = verticalBars * height;
+            const totalSteelLength = totalHorizontalLength + totalVerticalLength;
+            
+            // Donatı ağırlığı (kg) - Çelik yoğunluğu: 7850 kg/m³
+            const steelWeight = totalSteelLength * (Math.PI * Math.pow(steelDiameter/1000, 2)/4) * 7850;
+            
+            // Kalıp alanı (m²)
+            const formworkArea = 2 * length * height; // Her iki yüzey
+            
+            // Sonuçları göster
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = `
+                <div class="result-item">
+                    <span>Beton Hacmi:</span>
+                    <span class="result-value">${concreteVolume.toFixed(2)} m³</span>
+                </div>
+                <div class="result-item">
+                    <span>Toplam Donatı Uzunluğu:</span>
+                    <span class="result-value">${totalSteelLength.toFixed(2)} m</span>
+                </div>
+                <div class="result-item">
+                    <span>Donatı Ağırlığı:</span>
+                    <span class="result-value">${steelWeight.toFixed(2)} kg</span>
+                </div>
+                <div class="result-item">
+                    <span>Yatay Donatı Sayısı:</span>
+                    <span class="result-value">${horizontalBars} adet</span>
+                </div>
+                <div class="result-item">
+                    <span>Düşey Donatı Sayısı:</span>
+                    <span class="result-value">${verticalBars} adet</span>
+                </div>
+                <div class="result-item">
+                    <span>Kalıp Alanı:</span>
+                    <span class="result-value">${formworkArea.toFixed(2)} m²</span>
+                </div>
+            `;
+            
+            // Duvarı çiz
+            drawWall(length, height, thickness, horizontalBars, verticalBars);
+        }
+        
+        function drawWall(length, height, thickness, horizontalBars, verticalBars) {
+            const canvas = document.getElementById('wallCanvas');
+            const ctx = canvas.getContext('2d');
+            
+            // Ölçek faktörü - duvarı canvas'a sığdırmak için
+            const scaleX = canvas.width / (length + 2);
+            const scaleY = canvas.height / (height + 2);
+            const scale = Math.min(scaleX, scaleY);
+            
+            // Merkezleme için offset
+            const offsetX = (canvas.width - length * scale) / 2;
+            const offsetY = (canvas.height - height * scale) / 2;
+            
+            // Temizle
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            
+            // Duvar çerçevesi
+            ctx.strokeStyle = '#333';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(offsetX, offsetY, length * scale, height * scale);
+            
+            // Duvar içi (beton)
+            ctx.fillStyle = 'rgba(170, 170, 170, 0.5)';
+            ctx.fillRect(offsetX, offsetY, length * scale, height * scale);
+            
+            // Donatıları çiz
+            ctx.strokeStyle = '#e74c3c';
+            ctx.lineWidth = 1;
+            
+            // Yatay donatılar
+            const horizontalSpacing = height / (horizontalBars - 1);
+            for (let i = 0; i < horizontalBars; i++) {
+                const y = offsetY + i * horizontalSpacing * scale;
+                ctx.beginPath();
+                ctx.moveTo(offsetX, y);
+                ctx.lineTo(offsetX + length * scale, y);
+                ctx.stroke();
+            }
+            
+            // Düşey donatılar
+            const verticalSpacing = length / (verticalBars - 1);
+            for (let i = 0; i < verticalBars; i++) {
+                const x = offsetX + i * verticalSpacing * scale;
+                ctx.beginPath();
+                ctx.moveTo(x, offsetY);
+                ctx.lineTo(x, offsetY + height * scale);
+                ctx.stroke();
+            }
+            
+            // Ölçüleri yaz
+            ctx.fillStyle = '#000';
+            ctx.font = '12px Arial';
+            
+            // Uzunluk ölçüsü
+            ctx.fillText(`${length.toFixed(2)} m`, offsetX + length * scale / 2 - 30, offsetY + height * scale + 20);
+            
+            // Yükseklik ölçüsü
+            ctx.save();
+            ctx.translate(offsetX - 20, offsetY + height * scale / 2);
+            ctx.rotate(-Math.PI / 2);
+            ctx.fillText(`${height.toFixed(2)} m`, 0, 0);
+            ctx.restore();
+            
+            // Kalınlık ölçüsü (yan görünüm efekti)
+            ctx.fillText(`${(thickness*100).toFixed(0)} cm`, offsetX + length * scale + 10, offsetY + height * scale / 2);
+        }
+        
+        // Sayfa yüklendiğinde varsayılan değerlerle hesapla
+        window.onload = calculate;
+    </script>
+</body>
 </html>
