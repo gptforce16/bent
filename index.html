@@ -102,11 +102,12 @@
       font-size: 11px;
     }
     
-    /* Grafik konteyner stili */
+    /* Grafik konteyner stili - YÜKSEKLİK ARTIRILDI */
     .grafik-container {
       margin-top: 10px;
       width: 100%;
-      height: 400px;
+      height: 600px; /* 400px'den 600px'ye çıkarıldı */
+      min-height: 600px;
     }
     
     /* Buton grubu stili */
@@ -322,12 +323,13 @@
       const genelMin = Math.min(minKot, minPiezo);
       const genelMax = Math.max(maxKot, maxPiezo);
       
-      // Y ekseni aralığını belirle (20% marj ekleyerek)
-      const yMin = genelMin - (genelMax - genelMin) * 0.2;
-      const yMax = genelMax + (genelMax - genelMin) * 0.2;
+      // Y ekseni aralığını belirle (daha fazla marj ekleyerek)
+      const aralik = genelMax - genelMin;
+      const yMin = genelMin - aralik * 0.5; // %50 marj
+      const yMax = genelMax + aralik * 0.5; // %50 marj
       
       // Adım boyutunu belirle
-      const stepSize = Math.max(5, Math.round((yMax - yMin) / 10));
+      const stepSize = Math.max(5, Math.round(aralik / 8));
       
       basincGrafik = new Chart(ctx, {
         type: 'line',
@@ -365,6 +367,7 @@
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false, // En-boy oranını koruma özelliğini kapat
           plugins: {
             tooltip: {
               callbacks: {
@@ -396,13 +399,29 @@
               },
               ticks: {
                 stepSize: stepSize
+              },
+              grid: {
+                drawOnChartArea: true,
+                color: 'rgba(0, 0, 0, 0.1)'
               }
             },
             x: {
               title: {
                 display: true,
                 text: 'Kümülatif Mesafe (m)'
+              },
+              grid: {
+                drawOnChartArea: true,
+                color: 'rgba(0, 0, 0, 0.1)'
               }
+            }
+          },
+          layout: {
+            padding: {
+              top: 20,
+              right: 20,
+              bottom: 20,
+              left: 20
             }
           }
         }
