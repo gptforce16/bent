@@ -348,22 +348,14 @@
     function grafikGoster() {
   const ctx = document.getElementById('basincGrafik').getContext('2d');
   
-  // Eğer önceki grafik varsa yok et
   if (basincGrafik) {
     basincGrafik.destroy();
   }
-  
-  // Mesafe değerlerini sırala ve eşit aralıklı hale getir
-  const siraliMesafeler = [...grafikData.mesafeler].sort((a, b) => a - b);
-  const minMesafe = Math.min(...grafikData.mesafeler);
-  const maxMesafe = Math.max(...grafikData.mesafeler);
-  const mesafeAraligi = maxMesafe - minMesafe;
-  
-  // Yeni grafik oluştur
+
   basincGrafik = new Chart(ctx, {
     type: 'line',
     data: {
-      labels: grafikData.mesafeler,
+      labels: grafikData.mesafeler.map(() => ""), // Boş string ile mesafeleri gizle
       datasets: [{
         label: 'İşletme Basıncı (m)',
         data: grafikData.basincDegerleri,
@@ -378,9 +370,7 @@
           return 'rgba(75, 192, 192, 0.7)';
         }),
         pointRadius: 6,
-        pointHoverRadius: 8,
-        pointBorderColor: 'rgba(0, 0, 0, 0.8)',
-        pointBorderWidth: 1
+        pointHoverRadius: 8
       }]
     },
     options: {
@@ -389,14 +379,16 @@
         tooltip: {
           callbacks: {
             title: function(context) {
-              return `Mesafe: ${context[0].label}m`;
+              // Mesafeyi virgülden sonra 2 basamakla göster
+              return `Mesafe: ${grafikData.mesafeler[context[0].dataIndex].toFixed(2)}m`;
+            },
+            label: function(context) {
+              // Basıncı virgülden sonra 2 basamakla göster
+              return `Basınç: ${context.parsed.y.toFixed(2)}m`;
             },
             afterLabel: function(context) {
               const index = context.dataIndex;
-              return [
-                `Basınç: ${context.raw}m`,
-                grafikData.uyarilar[index] ? `Uyarı: ${grafikData.uyarilar[index]}` : ''
-              ];
+              return grafikData.uyarilar[index] ? `Uyarı: ${grafikData.uyarilar[index]}` : '';
             }
           }
         },
@@ -417,9 +409,6 @@
           title: {
             display: true,
             text: 'İşletme Basıncı (m)'
-          },
-          ticks: {
-            precision: 2
           }
         },
         x: {
@@ -430,21 +419,11 @@
             text: 'Mesafe (m)'
           },
           ticks: {
-            stepSize: mesafeAraligi > 100 ? Math.round(mesafeAraligi / 10) : 
-                     mesafeAraligi > 50 ? 10 : 
-                     mesafeAraligi > 20 ? 5 : 
-                     mesafeAraligi > 10 ? 2 : 1,
-            callback: function(value) {
-              return value + 'm';
-            }
+            display: false // X eksenindeki sayıları gizle
           },
-          min: minMesafe > 0 ? minMesafe * 0.9 : 0,
-          max: maxMesafe * 1.1
-        }
-      },
-      elements: {
-        line: {
-          stepped: false
+          grid: {
+            display: true // Çizgileri göster (isteğe bağlı)
+          }
         }
       }
     }
