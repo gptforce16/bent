@@ -346,75 +346,110 @@
     }
 
     function grafikGoster() {
-      const ctx = document.getElementById('basincGrafik').getContext('2d');
-      
-      // Eğer önceki grafik varsa yok et
-      if (basincGrafik) {
-        basincGrafik.destroy();
-      }
-      
-      // Yeni grafik oluştur
-      basincGrafik = new Chart(ctx, {
-        type: 'line',
-        data: {
-          labels: grafikData.mesafeler,
-          datasets: [{
-            label: 'İşletme Basıncı (m)',
-            data: grafikData.basincDegerleri,
-            borderColor: 'rgb(75, 192, 192)',
-            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            borderWidth: 2,
-            tension: 0.1,
-            pointBackgroundColor: grafikData.uyarilar.map(uyari => {
-              if (uyari === "Vantuz") return 'rgba(255, 215, 0, 0.7)';
-              if (uyari === "Tahliye") return 'rgba(135, 206, 235, 0.7)';
-              if (uyari === "Düşük Basınç") return 'rgba(255, 160, 122, 0.7)';
-              return 'rgba(75, 192, 192, 0.7)';
-            }),
-            pointRadius: 6,
-            pointHoverRadius: 8
-          }]
-        },
-        options: {
-          responsive: true,
-          plugins: {
-            tooltip: {
-              callbacks: {
-                afterLabel: function(context) {
-                  const index = context.dataIndex;
-                  return grafikData.uyarilar[index] ? 'Uyarı: ' + grafikData.uyarilar[index] : '';
-                }
-              }
+  const ctx = document.getElementById('basincGrafik').getContext('2d');
+  
+  // Eğer önceki grafik varsa yok et
+  if (basincGrafik) {
+    basincGrafik.destroy();
+  }
+  
+  // Mesafe değerlerini sırala ve eşit aralıklı hale getir
+  const siraliMesafeler = [...grafikData.mesafeler].sort((a, b) => a - b);
+  const minMesafe = Math.min(...grafikData.mesafeler);
+  const maxMesafe = Math.max(...grafikData.mesafeler);
+  const mesafeAraligi = maxMesafe - minMesafe;
+  
+  // Yeni grafik oluştur
+  basincGrafik = new Chart(ctx, {
+    type: 'line',
+    data: {
+      labels: grafikData.mesafeler,
+      datasets: [{
+        label: 'İşletme Basıncı (m)',
+        data: grafikData.basincDegerleri,
+        borderColor: 'rgb(75, 192, 192)',
+        backgroundColor: 'rgba(75, 192, 192, 0.2)',
+        borderWidth: 2,
+        tension: 0.1,
+        pointBackgroundColor: grafikData.uyarilar.map(uyari => {
+          if (uyari === "Vantuz") return 'rgba(255, 215, 0, 0.7)';
+          if (uyari === "Tahliye") return 'rgba(135, 206, 235, 0.7)';
+          if (uyari === "Düşük Basınç") return 'rgba(255, 160, 122, 0.7)';
+          return 'rgba(75, 192, 192, 0.7)';
+        }),
+        pointRadius: 6,
+        pointHoverRadius: 8,
+        pointBorderColor: 'rgba(0, 0, 0, 0.8)',
+        pointBorderWidth: 1
+      }]
+    },
+    options: {
+      responsive: true,
+      plugins: {
+        tooltip: {
+          callbacks: {
+            title: function(context) {
+              return `Mesafe: ${context[0].label}m`;
             },
-            legend: {
-              position: 'top',
-            },
-            title: {
-              display: true,
-              text: 'Mesafeye Göre İşletme Basıncı',
-              font: {
-                size: 16
-              }
-            }
-          },
-          scales: {
-            y: {
-              beginAtZero: false,
-              title: {
-                display: true,
-                text: 'İşletme Basıncı (m)'
-              }
-            },
-            x: {
-              title: {
-                display: true,
-                text: 'Mesafe (m)'
-              }
+            afterLabel: function(context) {
+              const index = context.dataIndex;
+              return [
+                `Basınç: ${context.raw}m`,
+                grafikData.uyarilar[index] ? `Uyarı: ${grafikData.uyarilar[index]}` : ''
+              ];
             }
           }
+        },
+        legend: {
+          position: 'top',
+        },
+        title: {
+          display: true,
+          text: 'Mesafeye Göre İşletme Basıncı',
+          font: {
+            size: 16
+          }
         }
-      });
+      },
+      scales: {
+        y: {
+          beginAtZero: false,
+          title: {
+            display: true,
+            text: 'İşletme Basıncı (m)'
+          },
+          ticks: {
+            precision: 2
+          }
+        },
+        x: {
+          type: 'linear',
+          position: 'bottom',
+          title: {
+            display: true,
+            text: 'Mesafe (m)'
+          },
+          ticks: {
+            stepSize: mesafeAraligi > 100 ? Math.round(mesafeAraligi / 10) : 
+                     mesafeAraligi > 50 ? 10 : 
+                     mesafeAraligi > 20 ? 5 : 
+                     mesafeAraligi > 10 ? 2 : 1,
+            callback: function(value) {
+              return value + 'm';
+            }
+          },
+          min: minMesafe > 0 ? minMesafe * 0.9 : 0,
+          max: maxMesafe * 1.1
+        }
+      },
+      elements: {
+        line: {
+          stepped: false
+        }
+      }
     }
+  });
+}
 
     function exceleKaydet() {
       const rows = document.querySelectorAll("#noktalarTablo tr");
