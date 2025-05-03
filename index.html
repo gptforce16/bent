@@ -6,7 +6,7 @@
   <title>Su Tesisleri Dairesi Başkanlığı Piezometre Hesaplama Tablosu</title>  
   <style>  
     html, body {  
-        
+       
     }  
     body {  
       font-family: sans-serif;  
@@ -275,6 +275,7 @@
       const rows = document.querySelectorAll("#noktalarTablo tr");  
       let toplamYukKaybi = 0;  
       const ilkKot = parseFloat(rows[0].querySelector(".kot").value) || 0;  
+      let kumulatifMesafe = 0; // Kümülatif mesafe için değişken
       
       // Grafik verilerini temizle
       grafikData.mesafeler = [];
@@ -288,6 +289,8 @@
         const atu = row.querySelector(".atu").value;  
         const debi = parseFloat(row.querySelector(".debi").value) || 0;  
   
+        // Kümülatif mesafe hesapla
+        kumulatifMesafe += mesafe;
         const icCap = boruTablosu[cap][atu];  
         if (!icCap) {  
           alert(`İç çap bulunamadı: ${cap} - ${atu}`);  
@@ -335,9 +338,9 @@
           row.classList.add("dusuk-basinc");
         }
 
-        // Grafik verilerini topla
-        grafikData.mesafeler.push(mesafe);
-        grafikData.basincDegerleri.push(isletmeBasinci);
+        // Grafik verilerini topla (kümülatif mesafe kullanarak)
+        grafikData.mesafeler.push(parseFloat(kumulatifMesafe.toFixed(2))); // Virgülden sonra 2 basamak
+        grafikData.basincDegerleri.push(parseFloat(isletmeBasinci.toFixed(2)));
         grafikData.uyarilar.push(uyarı);
       });  
       
@@ -357,7 +360,7 @@
       basincGrafik = new Chart(ctx, {
         type: 'line',
         data: {
-          labels: grafikData.mesafeler,
+          labels: grafikData.mesafeler.map(m => m.toString()), // Mesafeleri string olarak göster
           datasets: [{
             label: 'İşletme Basıncı (m)',
             data: grafikData.basincDegerleri,
@@ -391,7 +394,7 @@
             },
             title: {
               display: true,
-              text: 'Mesafeye Göre İşletme Basıncı',
+              text: 'Kümülatif Mesafeye Göre İşletme Basıncı',
               font: {
                 size: 16
               }
@@ -408,7 +411,7 @@
             x: {
               title: {
                 display: true,
-                text: 'Mesafe (m)'
+                text: 'Kümülatif Mesafe (m)'
               }
             }
           }
@@ -420,7 +423,8 @@
       const rows = document.querySelectorAll("#noktalarTablo tr");
       const ilkKot = parseFloat(rows[0]?.querySelector(".kot").value) || 0;
       let toplamYukKaybi = 0;
-      const data = [["Debi (L/s)", "Kot (m)", "Mesafe (m)", "Yük Kaybı (m)", "Toplam Yük Kaybı (m)", "Boru Çapı (mm)", "Atü (bar)", "Hız (m/s)", "İşletme Basıncı (m)", "Koç Darbesi", "Boru Basıncı (m)", "Uyarı"]];
+      let kumulatifMesafe = 0;
+      const data = [["Debi (L/s)", "Kot (m)", "Mesafe (m)", "Kümülatif Mesafe (m)", "Yük Kaybı (m)", "Toplam Yük Kaybı (m)", "Boru Çapı (mm)", "Atü (bar)", "Hız (m/s)", "İşletme Basıncı (m)", "Koç Darbesi", "Boru Basıncı (m)", "Uyarı"]];
       
       let oncekiKot = ilkKot;
 
@@ -428,6 +432,7 @@
         const debi = parseFloat(row.querySelector(".debi").value) || 0;
         const kot = parseFloat(row.querySelector(".kot").value) || 0;
         const mesafe = parseFloat(row.querySelector(".mesafe").value) || 0;
+        kumulatifMesafe += mesafe;
         const cap = row.querySelector(".boru").value;
         const atu = row.querySelector(".atu").value;
         const icCap = boruTablosu[cap][atu] / 1000;
@@ -458,10 +463,14 @@
         }
 
         data.push([
-          debi, kot, mesafe,
+          debi, 
+          kot, 
+          mesafe,
+          kumulatifMesafe.toFixed(2), // Kümülatif mesafe eklendi
           yukKaybi.toFixed(2),
           toplamYukKaybi.toFixed(2),
-          cap, atu,
+          cap, 
+          atu,
           hiz.toFixed(2), 
           isletme.toFixed(2), 
           kocDarbesi.toFixed(2), 
@@ -508,11 +517,11 @@
         row.s = rowStyle;
 
         // Uyarıları renklendirme
-        if (data[i][11] === "Vantuz") {
+        if (data[i][12] === "Vantuz") {
           ws[`A${i + 1}`].s.fill = { fgColor: { rgb: "FFD700" } };
-        } else if (data[i][11] === "Tahliye") {
+        } else if (data[i][12] === "Tahliye") {
           ws[`A${i + 1}`].s.fill = { fgColor: { rgb: "87CEEB" } };
-        } else if (data[i][11] === "Düşük Basınç") {
+        } else if (data[i][12] === "Düşük Basınç") {
           ws[`A${i + 1}`].s.fill = { fgColor: { rgb: "FFA07A" } };
         }
       }
