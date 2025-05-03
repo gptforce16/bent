@@ -243,7 +243,8 @@
     let basincGrafik = null;
     const grafikData = {
       mesafeler: [],
-      basincDegerleri: [],
+      kotDegerleri: [],
+      piezoKotlari: [],
       uyarilar: []
     };
 
@@ -275,22 +276,21 @@
       const rows = document.querySelectorAll("#noktalarTablo tr");  
       let toplamYukKaybi = 0;  
       const ilkKot = parseFloat(rows[0].querySelector(".kot").value) || 0;  
-      let kumulatifMesafe = 0; // Kümülatif mesafe için değişken
+      let kumulatifMesafe = 0;
       
-      // Grafik verilerini temizle
       grafikData.mesafeler = [];
-      grafikData.basincDegerleri = [];
+      grafikData.kotDegerleri = [];
+      grafikData.piezoKotlari = [];
       grafikData.uyarilar = [];
   
       rows.forEach((row, i) => {  
         const kot = parseFloat(row.querySelector(".kot").value) || 0;  
         const mesafe = parseFloat(row.querySelector(".mesafe").value) || 0;  
+        kumulatifMesafe += mesafe;
         const cap = row.querySelector(".boru").value;  
         const atu = row.querySelector(".atu").value;  
         const debi = parseFloat(row.querySelector(".debi").value) || 0;  
   
-        // Kümülatif mesafe hesapla
-        kumulatifMesafe += mesafe;
         const icCap = boruTablosu[cap][atu];  
         if (!icCap) {  
           alert(`İç çap bulunamadı: ${cap} - ${atu}`);  
@@ -305,16 +305,12 @@
         toplamYukKaybi += yukKaybi;  
         const piezoKot = ilkKot - toplamYukKaybi;  
         const isletmeBasinci = piezoKot - kot;
-        const boruCap = parseFloat(cap);
-        const kocDarbesi = Math.sqrt((2100 * 1000) / (1 + 2.1 * (icCap / ((boruCap - icCap) / 2)))) * (hiz / (9.82 * 2));
-        const boruBasinci = ilkKot - kot + kocDarbesi;
         
         row.querySelector(".hiz").value = hiz.toFixed(2);  
         row.querySelector(".isletme").value = isletmeBasinci.toFixed(2);  
         
-        // Uyarı mantığı ve renklendirme
         let uyarı = "";
-        row.className = ""; // Önceki uyarı sınıflarını temizle
+        row.className = "";
         
         if (i > 0) {
           const prevKot = parseFloat(rows[i - 1].querySelector(".kot").value) || 0;
@@ -332,51 +328,60 @@
           }
         }
 
-        // İşletme basıncı 2'den küçükse "Düşük Basınç" uyarısı ekle
         if (isletmeBasinci < 2) {
           uyarı = "Düşük Basınç";
           row.classList.add("dusuk-basinc");
         }
 
-        // Grafik verilerini topla (kümülatif mesafe kullanarak)
-        grafikData.mesafeler.push(parseFloat(kumulatifMesafe.toFixed(2))); // Virgülden sonra 2 basamak
-        grafikData.basincDegerleri.push(parseFloat(isletmeBasinci.toFixed(2)));
+        grafikData.mesafeler.push(parseFloat(kumulatifMesafe.toFixed(2)));
+        grafikData.kotDegerleri.push(parseFloat(kot.toFixed(2)));
+        grafikData.piezoKotlari.push(parseFloat(piezoKot.toFixed(2)));
         grafikData.uyarilar.push(uyarı);
       });  
       
-      // Grafiği güncelle
       grafikGoster();
     }
 
     function grafikGoster() {
       const ctx = document.getElementById('basincGrafik').getContext('2d');
       
-      // Eğer önceki grafik varsa yok et
       if (basincGrafik) {
         basincGrafik.destroy();
       }
       
-      // Yeni grafik oluştur
       basincGrafik = new Chart(ctx, {
         type: 'line',
         data: {
-          labels: grafikData.mesafeler.map(m => m.toString()), // Mesafeleri string olarak göster
-          datasets: [{
-            label: 'İşletme Basıncı (m)',
-            data: grafikData.basincDegerleri,
-            borderColor: 'rgb(75, 192, 192)',
-            backgroundColor: 'rgba(75, 192, 192, 0.2)',
-            borderWidth: 2,
-            tension: 0.1,
-            pointBackgroundColor: grafikData.uyarilar.map(uyari => {
-              if (uyari === "Vantuz") return 'rgba(255, 215, 0, 0.7)';
-              if (uyari === "Tahliye") return 'rgba(135, 206, 235, 0.7)';
-              if (uyari === "Düşük Basınç") return 'rgba(255, 160, 122, 0.7)';
-              return 'rgba(75, 192, 192, 0.7)';
-            }),
-            pointRadius: 6,
-            pointHoverRadius: 8
-          }]
+          labels: grafikData.mesafeler.map(m => m.toString()),
+          datasets: [
+            {
+              label: 'Kot (m)',
+              data: grafikData.kotDegerleri,
+              borderColor: 'rgb(54, 162, 235)',
+              backgroundColor: 'rgba(54, 162, 235, 0.2)',
+              borderWidth: 2,
+              tension: 0.1,
+              pointBackgroundColor: grafikData.uyarilar.map(uyari => {
+                if (uyari === "Vantuz") return 'rgba(255, 215, 0, 0.7)';
+                if (uyari === "Tahliye") return 'rgba(135, 206, 235, 0.7)';
+                if (uyari === "Düşük Basınç") return 'rgba(255, 160, 122, 0.7)';
+                return 'rgba(54, 162, 235, 0.7)';
+              }),
+              pointRadius: 6,
+              pointHoverRadius: 8
+            },
+            {
+              label: 'Piezometre Kotu (m)',
+              data: grafikData.piezoKotlari,
+              borderColor: 'rgb(255, 99, 132)',
+              backgroundColor: 'rgba(255, 99, 132, 0.2)',
+              borderWidth: 2,
+              tension: 0.1,
+              borderDash: [5, 5],
+              pointRadius: 6,
+              pointHoverRadius: 8
+            }
+          ]
         },
         options: {
           responsive: true,
@@ -394,7 +399,7 @@
             },
             title: {
               display: true,
-              text: 'Kümülatif Mesafeye Göre İşletme Basıncı',
+              text: 'Kümülatif Mesafeye Göre Kot ve Piezometre Hattı',
               font: {
                 size: 16
               }
@@ -405,7 +410,7 @@
               beginAtZero: false,
               title: {
                 display: true,
-                text: 'İşletme Basıncı (m)'
+                text: 'Kot (m)'
               }
             },
             x: {
@@ -426,8 +431,6 @@
       let kumulatifMesafe = 0;
       const data = [["Debi (L/s)", "Kot (m)", "Mesafe (m)", "Kümülatif Mesafe (m)", "Yük Kaybı (m)", "Toplam Yük Kaybı (m)", "Boru Çapı (mm)", "Atü (bar)", "Hız (m/s)", "İşletme Basıncı (m)", "Koç Darbesi", "Boru Basıncı (m)", "Uyarı"]];
       
-      let oncekiKot = ilkKot;
-
       rows.forEach((row, i) => {
         const debi = parseFloat(row.querySelector(".debi").value) || 0;
         const kot = parseFloat(row.querySelector(".kot").value) || 0;
@@ -446,7 +449,6 @@
         const kocDarbesi = Math.sqrt((2100 * 1000) / (1 + 2.1 * ((icCap * 1000) / ((boruCap - (icCap * 1000)) / 2)))) * (hiz / (9.82 * 2)); 
         const boruBasinci = ilkKot - kot + kocDarbesi;
 
-        // Uyarı mantığı
         let uyarı = "";
         if (i > 0) {
           const prevKot = parseFloat(rows[i - 1].querySelector(".kot").value) || 0;
@@ -466,7 +468,7 @@
           debi, 
           kot, 
           mesafe,
-          kumulatifMesafe.toFixed(2), // Kümülatif mesafe eklendi
+          kumulatifMesafe.toFixed(2),
           yukKaybi.toFixed(2),
           toplamYukKaybi.toFixed(2),
           cap, 
@@ -482,7 +484,6 @@
       const ws = XLSX.utils.aoa_to_sheet(data);
       const wb = XLSX.utils.book_new();
       
-      // Başlıkları stilize etme
       const headerStyle = {
         font: { bold: true, color: { rgb: 'FFFFFF' } },
         alignment: { horizontal: 'center', vertical: 'center', wrapText: true },
@@ -495,7 +496,6 @@
         }
       };
 
-      // Verileri stilize etme
       const rowStyle = {
         alignment: { horizontal: 'center', vertical: 'center' },
         border: {
@@ -506,17 +506,14 @@
         }
       };
 
-      // Başlıkları stilize etme
       XLSX.utils.sheet_add_aoa(ws, [data[0]], { origin: "A1" });
       ws['A1'].s = headerStyle;
 
-      // Verileri eklerken stil uygulama
       for (let i = 1; i < data.length; i++) {
         XLSX.utils.sheet_add_aoa(ws, [data[i]], { origin: `A${i + 1}` });
         const row = ws[`A${i + 1}`];
         row.s = rowStyle;
 
-        // Uyarıları renklendirme
         if (data[i][12] === "Vantuz") {
           ws[`A${i + 1}`].s.fill = { fgColor: { rgb: "FFD700" } };
         } else if (data[i][12] === "Tahliye") {
@@ -526,7 +523,6 @@
         }
       }
 
-      // Sütun genişliklerini ayarla
       ws['!cols'] = [
         { wch: 10 }, { wch: 10 }, { wch: 12 }, 
         { wch: 12 }, { wch: 12 }, { wch: 12 },
@@ -534,16 +530,13 @@
         { wch: 12 }, { wch: 12 }, { wch: 15 }
       ];
 
-      // Başlık yüksekliği
       ws['!rows'] = ws['!rows'] || [];
       ws['!rows'][0] = { hpt: 30 };
 
-      // Yeni stil ile dosyayı oluşturma
       XLSX.utils.book_append_sheet(wb, ws, "Piezometre Hesabı");
       XLSX.writeFile(wb, "piezometre_hesabi.xlsx");
     }
 
-    // Sayfa yüklendiğinde ilk noktayı ekle
     window.onload = function() {
       ekleNokta();
     };
